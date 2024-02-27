@@ -12,29 +12,29 @@ import java.util.Scanner;
 
 public class Menu {
     static final String dbURL = "jdbc:postgresql://localhost:5432/futbol";
-    static final String user = "root";
+    static final String user = "postgres";
     static final String password = "root";
 
     //SENTENCIAS SQL
     static private final String SQL_INSERTAR_EQUIPO = "INSERT INTO objetos.equipos (equipo_info) VALUES (ROW(?,?,ROW(?,?)));";
     static private final String SQL_MODIFICAR_EQUIPO = "UPDATE objetos.equipos SET equipo_info = (ROW(?,?,ROW(?,?))) WHERE equipo_id = ?;";
-    static private final String SQL_ELIMINAR_EQUIPO = "";
+    static private final String SQL_ELIMINAR_EQUIPO = "BEGIN; UPDATE objetos.jugadores SET equipo_id = null WHERE equipo_id = ?; DELETE FROM objetos.partidos WHERE equipo_local = ? OR equipo_visitante = ?;DELETE FROM objetos.equipos WHERE equipo_id = ?;COMMIT;";
     static private final String SQL_INSERTAR_JUGADOR = "INSERT INTO objetos.jugadores (datos_personales,jugador_info,equipo_id) VALUES (ROW(?,?),(ROW(?,?,?)),?);";
     static private final String SQL_MODIFICAR_JUGADOR = "UPDATE objetos.jugadores SET datos_personales = (ROW(?,?)), jugador_info = (ROW(?,?,?)), equipo_id = ? WHERE jugador_id = ?;";
-    static private final String SQL_ELIMINAR_JUGADOR = "";
+    static private final String SQL_ELIMINAR_JUGADOR = "DELETE FROM objetos.jugadores WHERE jugador_id = ?";
     static private final String SQL_INSERTAR_PARTIDO = "INSERT INTO objetos.partidos (fecha,equipo_local,equipo_visitante) VALUES (?,?,?);";
     static private final String SQL_MODIFICAR_PARTIDO = "UPDATE objetos.partidos SET fecha = ?, equipo_local = ?, equipo_visitante = ? WHERE partido_id = ?";
-    static private final String SQL_ELIMINAR_PARTIDO = "";
-    static private final String SQL_INSCRIBIR_JUGADOR_EQUIPO = "";
-    static private final String SQL_LISTAR_EQUIPO_ID= "";
-    static private final String SQL_LISTAR_EQUIPOS = "";
+    static private final String SQL_ELIMINAR_PARTIDO = "DELETE FROM objetos.partidos WHERE partido_id = ?";
+    static private final String SQL_INSCRIBIR_JUGADOR_EQUIPO = "UPDATE objetos.jugadores SET equipo_id = ? WHERE jugador_id = ?";
+    static private final String SQL_MOSTRAR_INFO_EQUIPO_ID= "SELECT equipo_id, (equipo_info).nombre as Nombre, (equipo_info).ciudad as Ciudad, (equipo_info).entrenador.nombre as NombreE,(equipo_info).entrenador.edad as Edad FROM objetos.equipos WHERE equipo_id = ?;";
+    static private final String SQL_LISTAR_EQUIPOS = "SELECT equipo_id, (equipo_info).nombre as Nombre, (equipo_info).ciudad as Ciudad, (equipo_info).entrenador.nombre as NombreE,(equipo_info).entrenador.edad as Edad FROM objetos.equipos";
     static private final String SQL_MOSTRAR_INFO_JUGADOR_ID = "SELECT jugador_id, (datos_personales).nombre as Nombre, (datos_personales).edad as Edad,(jugador_info).dorsal as Dorsal,(jugador_info).posicion as Posicion, (jugador_info).altura as Altura, equipo_id as Equipo FROM objetos.Jugadores WHERE jugador_id = ?";
     static private final String SQL_MOSTRAR_INFO_JUGADOR_NOMBRE = "SELECT jugador_id, (datos_personales).nombre as Nombre, (datos_personales).edad as Edad,(jugador_info).dorsal as Dorsal,(jugador_info).posicion as Posicion, (jugador_info).altura as Altura, equipo_id as Equipo FROM objetos.Jugadores WHERE (datos_personales).nombre = ?";
     static private final String SQL_PARTIDOS_EQUIPO_LOCAL_ID = "SELECT partido_id,fecha, equipo_local,equipo_visitante FROM objetos.partidos WHERE equipo_local = ?";
-    static private final String SQL_PARTIDOS_EQUIPO_VISITANTE_ID = "";
-    static private final String SQL_MOSTRAR_INFO_SEGUN_POSICION = "";
-    static private final String SQL_MOSTRAR_INFO_SEGUN_DORSAL = "";
-    static private final String SQL_MOSTRAR_PARTIDOS_SEGUN_FECHA = "";
+    static private final String SQL_PARTIDOS_EQUIPO_VISITANTE_ID = "SELECT partido_id,fecha, equipo_local,equipo_visitante FROM objetos.partidos WHERE equipo_visitante = ?";
+    static private final String SQL_MOSTRAR_INFO_SEGUN_POSICION = "SELECT jugador_id,(datos_personales).nombre as Nombre,(datos_personales).edad as Edad,(jugador_info).dorsal as Dorsal, (jugador_info).posicion as Posicion,(jugador_info).altura as Altura, equipo_id as Equipo FROM objetos.jugadores WHERE (jugador_info).posicion= ?";
+    static private final String SQL_MOSTRAR_INFO_SEGUN_DORSAL = "SELECT jugador_id,(datos_personales).nombre as Nombre,(datos_personales).edad as Edad,(jugador_info).dorsal as Dorsal, (jugador_info).posicion as Posicion,(jugador_info).altura as Altura, equipo_id as Equipo FROM objetos.jugadores WHERE (jugador_info).dorsal= ?";;
+    static private final String SQL_MOSTRAR_PARTIDOS_SEGUN_FECHA = "SELECT partido_id,fecha, equipo_local,equipo_visitante FROM objetos.partidos ORDER BY fecha ASC";
 
 
 
@@ -72,6 +72,7 @@ public class Menu {
                         modificarEquipo(conn);
                         break;
                     case 3:
+                        eliminarEquipo(conn);
                         break;
                     case 4:
                         insertarJugador(conn);
@@ -80,7 +81,7 @@ public class Menu {
                         modificarJugador(conn);
                         break;
                     case 6:
-
+                        eliminarJugador(conn);
                         break;
                     case 7:
                         insertarPartido(conn);
@@ -89,16 +90,16 @@ public class Menu {
                         modificarPartido(conn);
                         break;
                     case 9:
-
+                        eliminarPartido(conn);
                         break;
                     case 10:
-
+                        inscribirJugadorEquipo(conn);
                         break;
                     case 11:
-
+                        mostrarInfoEquipoId(conn);
                         break;
                     case 12:
-
+                        mostrarInfoEquipos(conn);
                         break;
                     case 13:
                         mostrarInfoJugadorID(conn);
@@ -110,25 +111,234 @@ public class Menu {
                         mostrarPartidosLocal(conn);
                         break;
                     case 16:
-
+                        mostrarPartidosVisitante(conn);
                         break;
                     case 17:
+                        mostrarJugadoresPosicion(conn);
                         break;
                     case 18:
-
+                        mostrarJugadoresDorsal(conn);
                         break;
                     case 19:
-
+                        mostrarPartidosSegunFecha(conn);
                         break;
+                    default:
+                        System.out.println("No es una opcion válida!!!!");
 
                 }
             }while (opt != 0);
 
         } catch (SQLException e) {
             e.printStackTrace();
+        }catch (InputMismatchException e){
+            System.out.println("ERROR!!!!! El dato introducido no es correcto");
         }
 
     }
+
+    private static void inscribirJugadorEquipo(Connection conn) {
+        try {
+            int idJugador = pedirInt("Introduce la id del jugador a inscribir");
+            int idEquipo = pedirInt("Introduce la id del equipo al que lo quieres inscribir");
+            PreparedStatement ps = conn.prepareStatement(SQL_INSCRIBIR_JUGADOR_EQUIPO);
+            ps.setInt(1,idEquipo);
+            ps.setInt(2,idJugador);
+            int rs = ps.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }catch (InputMismatchException e){
+            System.out.println("ERROR!!!!! El dato introducido no es correcto");
+        }
+
+    }
+
+    private static void eliminarPartido(Connection conn) {
+        try {
+            int idPartido = pedirInt("Introduce la id del partido a eliminar");
+            PreparedStatement ps = conn.prepareStatement(SQL_ELIMINAR_PARTIDO);
+            ps.setInt(1,idPartido);
+            int rs = ps.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }catch (InputMismatchException e){
+            System.out.println("ERROR!!!!! El dato introducido no es correcto");
+        }
+
+    }
+
+
+    private static void eliminarJugador(Connection conn) {
+        try {
+            int idJugador = pedirInt("Introduce la id del jugador a eliminar");
+            PreparedStatement ps = conn.prepareStatement(SQL_ELIMINAR_JUGADOR);
+            ps.setInt(1,idJugador);
+            int rs = ps.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }catch (InputMismatchException e){
+            System.out.println("ERROR!!!!! El dato introducido no es correcto");
+        }
+    }
+
+    private static void eliminarEquipo(Connection conn) {
+        try {
+            int idEquipo = pedirInt("Introduce la id del equipo a eliminar");
+            PreparedStatement ps = conn.prepareStatement(SQL_ELIMINAR_EQUIPO);
+            ps.setInt(1,idEquipo);
+            ps.setInt(2,idEquipo);
+            ps.setInt(3,idEquipo);
+            ps.setInt(4,idEquipo);
+            int rs = ps.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }catch (InputMismatchException e){
+            System.out.println("ERROR!!!!! El dato introducido no es correcto");
+        }
+    }
+
+    private static void mostrarPartidosSegunFecha(Connection conn) {
+        try {
+            PreparedStatement ps = conn.prepareStatement(SQL_MOSTRAR_PARTIDOS_SEGUN_FECHA);
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()){
+                System.out.println("****************************************************");
+                System.out.println("ID del partido: " + rs.getString("partido_id"));
+                System.out.println("Fecha: " + rs.getString("fecha"));
+                System.out.println("Equipo local: " + rs.getString("equipo_local"));
+                System.out.println("Equipo visitante: " + rs.getInt("equipo_visitante"));
+                System.out.println("****************************************************");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }catch (InputMismatchException e){
+            System.out.println("ERROR!!!!! El dato introducido no es correcto");
+        }
+
+
+    }
+
+    private static void mostrarJugadoresDorsal(Connection conn) {
+        try {
+            int dorsal = pedirInt("Introduce el dorsal");
+            PreparedStatement ps = conn.prepareStatement(SQL_MOSTRAR_INFO_SEGUN_DORSAL);
+            ps.setInt(1,dorsal);
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()){
+                System.out.println("****************************************************");
+                System.out.println("ID del jugador: " + rs.getInt("jugador_id"));
+                System.out.println("Nombre del jugador: " + rs.getString("Nombre"));
+                System.out.println("Edad: " + rs.getInt("Edad"));
+                System.out.println("Dorsal: " + rs.getInt("Dorsal"));
+                System.out.println("Posicion: " + rs.getString("Posicion"));
+                System.out.println("Altura: " + rs.getString("Altura"));
+                System.out.println("ID del equipo: " + rs.getString("Equipo"));
+                System.out.println("****************************************************");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }catch (InputMismatchException e){
+            System.out.println("ERROR!!!!! El dato introducido no es correcto");
+        }
+    }
+
+    private static void mostrarJugadoresPosicion(Connection conn) {
+        try {
+            String posicion = pedirString("Introduce la posicion");
+            PreparedStatement ps = conn.prepareStatement(SQL_MOSTRAR_INFO_SEGUN_POSICION);
+            ps.setString(1,posicion);
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()){
+                System.out.println("****************************************************");
+                System.out.println("ID del jugador: " + rs.getInt("jugador_id"));
+                System.out.println("Nombre del jugador: " + rs.getString("Nombre"));
+                System.out.println("Edad: " + rs.getInt("Edad"));
+                System.out.println("Dorsal: " + rs.getInt("Dorsal"));
+                System.out.println("Posicion: " + rs.getString("Posicion"));
+                System.out.println("Altura: " + rs.getString("Altura"));
+                System.out.println("ID del equipo: " + rs.getString("Equipo"));
+                System.out.println("****************************************************");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }catch (InputMismatchException e){
+            System.out.println("ERROR!!!!! El dato introducido no es correcto");
+        }
+
+    }
+
+    private static void mostrarInfoEquipos(Connection conn) {
+        try {
+            PreparedStatement ps = conn.prepareStatement(SQL_LISTAR_EQUIPOS);
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()){
+                System.out.println("****************************************************");
+                System.out.println("ID del equipo: " + rs.getInt("equipo_id"));
+                System.out.println("Nombre del equipo: " + rs.getString("Nombre"));
+                System.out.println("Ciudad: " + rs.getString("Ciudad"));
+                System.out.println("Nombre del entrenador: " + rs.getString("NombreE"));
+                System.out.println("Edad: " + rs.getInt("Edad"));
+                System.out.println("****************************************************");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }catch (InputMismatchException e){
+            System.out.println("ERROR!!!!! El dato introducido no es correcto");
+        }
+    }
+
+    private static void mostrarInfoEquipoId(Connection conn) {
+        try {
+            int idEquipo = pedirInt("Introduce la id del equipo");
+            PreparedStatement ps = conn.prepareStatement(SQL_MOSTRAR_INFO_EQUIPO_ID);
+            ps.setInt(1,idEquipo);
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()){
+                System.out.println("ID del equipo: " + rs.getInt("equipo_id"));
+                System.out.println("Nombre del equipo: " + rs.getString("Nombre"));
+                System.out.println("Ciudad: " + rs.getString("Ciudad"));
+                System.out.println("Nombre del entrenador: " + rs.getString("NombreE"));
+                System.out.println("Edad: " + rs.getInt("Edad"));
+                System.out.println();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }catch (InputMismatchException e){
+            System.out.println("ERROR!!!!! El dato introducido no es correcto");
+        }
+    }
+
+    private static void mostrarPartidosVisitante(Connection conn) {
+        try {
+            int idE = pedirInt("Introduce la id del equipo, para ver la información de partidos visitantes");
+            PreparedStatement ps = conn.prepareStatement(SQL_PARTIDOS_EQUIPO_VISITANTE_ID);
+            ps.setInt(1,idE);
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()){
+                System.out.println("****************************************************");
+                System.out.println("ID del partido: " + rs.getString("partido_id"));
+                System.out.println("Fecha: " + rs.getString("fecha"));
+                System.out.println("Equipo local: " + rs.getString("equipo_local"));
+                System.out.println("Equipo visitante: " + rs.getInt("equipo_visitante"));
+                System.out.println("****************************************************");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }catch (InputMismatchException e){
+            System.out.println("ERROR!!!!! El dato introducido no es correcto");
+        }
+
+    }
+
 
     private static void mostrarPartidosLocal(Connection conn) {
         try {
@@ -138,14 +348,19 @@ public class Menu {
 
             ResultSet rs = ps.executeQuery();
             while (rs.next()){
+                System.out.println("****************************************************");
+
                 System.out.println("ID del partido: " + rs.getString("partido_id"));
                 System.out.println("Fecha: " + rs.getString("fecha"));
                 System.out.println("Equipo local: " + rs.getString("equipo_local"));
                 System.out.println("Equipo visitante: " + rs.getInt("equipo_visitante"));
-                System.out.println();
+                System.out.println("****************************************************");
+
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        }catch (InputMismatchException e){
+            System.out.println("ERROR!!!!! El dato introducido no es correcto");
         }
 
     }
@@ -158,6 +373,7 @@ public class Menu {
 
             ResultSet rs = ps.executeQuery();
             while (rs.next()){
+                System.out.println("****************************************************");
                 System.out.println("ID del jugador: " + rs.getInt("jugador_id"));
                 System.out.println("Nombre del jugador: " + rs.getString("Nombre"));
                 System.out.println("Edad: " + rs.getInt("Edad"));
@@ -165,9 +381,12 @@ public class Menu {
                 System.out.println("Posicion: " + rs.getString("Posicion"));
                 System.out.println("Altura: " + rs.getString("Altura"));
                 System.out.println("ID del equipo: " + rs.getString("Equipo"));
+                System.out.println("****************************************************");
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        }catch (InputMismatchException e){
+            System.out.println("ERROR!!!!! El dato introducido no es correcto");
         }
     }
 
@@ -179,6 +398,7 @@ public class Menu {
 
             ResultSet rs = ps.executeQuery();
             while (rs.next()){
+                System.out.println("****************************************************");
                 System.out.println("ID del jugador: " + rs.getInt("jugador_id"));
                 System.out.println("Nombre del jugador: " + rs.getString("Nombre"));
                 System.out.println("Edad: " + rs.getInt("Edad"));
@@ -186,9 +406,12 @@ public class Menu {
                 System.out.println("Posicion: " + rs.getString("Posicion"));
                 System.out.println("Altura: " + rs.getString("Altura"));
                 System.out.println("ID del equipo: " + rs.getString("Equipo"));
+                System.out.println("****************************************************");
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        }catch (InputMismatchException e){
+            System.out.println("ERROR!!!!! El dato introducido no es correcto");
         }
     }
 
@@ -242,6 +465,8 @@ public class Menu {
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        }catch (InputMismatchException e){
+            System.out.println("ERROR!!!!! El dato introducido no es correcto");
         }
 
     }
@@ -265,6 +490,8 @@ public class Menu {
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        }catch (InputMismatchException e){
+            System.out.println("ERROR!!!!! El dato introducido no es correcto");
         }
     }
 
@@ -309,6 +536,8 @@ public class Menu {
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        }catch (InputMismatchException e){
+            System.out.println("ERROR!!!!! El dato introducido no es correcto");
         }
 
     }
@@ -334,6 +563,8 @@ public class Menu {
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        }catch (InputMismatchException e){
+            System.out.println("No es una opción valida");
         }
 
 
