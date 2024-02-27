@@ -12,7 +12,7 @@ import java.util.Scanner;
 
 public class Menu {
     static final String dbURL = "jdbc:postgresql://localhost:5432/futbol";
-    static final String user = "postgres";
+    static final String user = "root";
     static final String password = "root";
 
     //SENTENCIAS SQL
@@ -23,14 +23,14 @@ public class Menu {
     static private final String SQL_MODIFICAR_JUGADOR = "UPDATE objetos.jugadores SET datos_personales = (ROW(?,?)), jugador_info = (ROW(?,?,?)), equipo_id = ? WHERE jugador_id = ?;";
     static private final String SQL_ELIMINAR_JUGADOR = "";
     static private final String SQL_INSERTAR_PARTIDO = "INSERT INTO objetos.partidos (fecha,equipo_local,equipo_visitante) VALUES (?,?,?);";
-    static private final String SQL_MODIFICAR_PARTIDO = "";
+    static private final String SQL_MODIFICAR_PARTIDO = "UPDATE objetos.partidos SET fecha = ?, equipo_local = ?, equipo_visitante = ? WHERE partido_id = ?";
     static private final String SQL_ELIMINAR_PARTIDO = "";
     static private final String SQL_INSCRIBIR_JUGADOR_EQUIPO = "";
     static private final String SQL_LISTAR_EQUIPO_ID= "";
     static private final String SQL_LISTAR_EQUIPOS = "";
-    static private final String SQL_MOSTRAR_INFO_JUGADOR_ID = "";
-    static private final String SQL_MOSTRAR_INFO_JUGADOR_NOMBRE = "";
-    static private final String SQL_PARTIDOS_EQUIPO_LOCAL_ID = "";
+    static private final String SQL_MOSTRAR_INFO_JUGADOR_ID = "SELECT jugador_id, (datos_personales).nombre as Nombre, (datos_personales).edad as Edad,(jugador_info).dorsal as Dorsal,(jugador_info).posicion as Posicion, (jugador_info).altura as Altura, equipo_id as Equipo FROM objetos.Jugadores WHERE jugador_id = ?";
+    static private final String SQL_MOSTRAR_INFO_JUGADOR_NOMBRE = "SELECT jugador_id, (datos_personales).nombre as Nombre, (datos_personales).edad as Edad,(jugador_info).dorsal as Dorsal,(jugador_info).posicion as Posicion, (jugador_info).altura as Altura, equipo_id as Equipo FROM objetos.Jugadores WHERE (datos_personales).nombre = ?";
+    static private final String SQL_PARTIDOS_EQUIPO_LOCAL_ID = "SELECT partido_id,fecha, equipo_local,equipo_visitante FROM objetos.partidos WHERE equipo_local = ?";
     static private final String SQL_PARTIDOS_EQUIPO_VISITANTE_ID = "";
     static private final String SQL_MOSTRAR_INFO_SEGUN_POSICION = "";
     static private final String SQL_MOSTRAR_INFO_SEGUN_DORSAL = "";
@@ -86,7 +86,7 @@ public class Menu {
                         insertarPartido(conn);
                         break;
                     case 8:
-
+                        modificarPartido(conn);
                         break;
                     case 9:
 
@@ -95,18 +95,22 @@ public class Menu {
 
                         break;
                     case 11:
+
                         break;
                     case 12:
 
                         break;
                     case 13:
-
+                        mostrarInfoJugadorID(conn);
                         break;
                     case 14:
+                        mostrarInfoJugadorNombre(conn);
                         break;
                     case 15:
+                        mostrarPartidosLocal(conn);
                         break;
                     case 16:
+
                         break;
                     case 17:
                         break;
@@ -122,6 +126,95 @@ public class Menu {
 
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+
+    }
+
+    private static void mostrarPartidosLocal(Connection conn) {
+        try {
+            int idE = pedirInt("Introduce la id del equipo, para ver la información de partidos locales");
+            PreparedStatement ps = conn.prepareStatement(SQL_PARTIDOS_EQUIPO_LOCAL_ID);
+            ps.setInt(1,idE);
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()){
+                System.out.println("ID del partido: " + rs.getString("partido_id"));
+                System.out.println("Fecha: " + rs.getString("fecha"));
+                System.out.println("Equipo local: " + rs.getString("equipo_local"));
+                System.out.println("Equipo visitante: " + rs.getInt("equipo_visitante"));
+                System.out.println();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    private static void mostrarInfoJugadorNombre(Connection conn) {
+        try {
+            String nombreJug = pedirString("Introduce el nombre del jugador");
+            PreparedStatement ps = conn.prepareStatement(SQL_MOSTRAR_INFO_JUGADOR_NOMBRE);
+            ps.setString(1,nombreJug);
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()){
+                System.out.println("ID del jugador: " + rs.getInt("jugador_id"));
+                System.out.println("Nombre del jugador: " + rs.getString("Nombre"));
+                System.out.println("Edad: " + rs.getInt("Edad"));
+                System.out.println("Dorsal: " + rs.getInt("Dorsal"));
+                System.out.println("Posicion: " + rs.getString("Posicion"));
+                System.out.println("Altura: " + rs.getString("Altura"));
+                System.out.println("ID del equipo: " + rs.getString("Equipo"));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void mostrarInfoJugadorID(Connection conn) {
+        try {
+            int idJug = pedirInt("Introduce la id del jugador");
+            PreparedStatement ps = conn.prepareStatement(SQL_MOSTRAR_INFO_JUGADOR_ID);
+            ps.setInt(1,idJug);
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()){
+                System.out.println("ID del jugador: " + rs.getInt("jugador_id"));
+                System.out.println("Nombre del jugador: " + rs.getString("Nombre"));
+                System.out.println("Edad: " + rs.getInt("Edad"));
+                System.out.println("Dorsal: " + rs.getInt("Dorsal"));
+                System.out.println("Posicion: " + rs.getString("Posicion"));
+                System.out.println("Altura: " + rs.getString("Altura"));
+                System.out.println("ID del equipo: " + rs.getString("Equipo"));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void modificarPartido(Connection conn) {
+        try {
+            int idP = pedirInt("Introduce la id del partido a modificar");
+            String fecha = pedirString("Introduce la fecha del partido");
+            int idL = pedirInt("Introduce la id del equipo local");
+            int idV = pedirInt("Introduce la id del equipo visitante");
+
+            //Formateador de fechas
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+            LocalDate date = LocalDate.parse(fecha,formatter);
+
+            PreparedStatement ps = conn.prepareStatement(SQL_MODIFICAR_PARTIDO);
+            ps.setDate(1, Date.valueOf(date));
+            ps.setInt(2,idL);
+            ps.setInt(3,idV);
+            ps.setInt(4,idP);
+
+            int insert = ps.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }catch (InputMismatchException e){
+            System.out.println("Dato introducido es incorrecto");
         }
 
     }
@@ -263,7 +356,5 @@ public class Menu {
         System.out.println(mensaje);
         return sc.nextBigDecimal();
     }
-
-
     }
 
