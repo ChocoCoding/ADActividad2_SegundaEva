@@ -15,8 +15,11 @@ import java.util.Scanner;
 
 public class Menu {
     static final String dbURL = "jdbc:postgresql://localhost:5432/futbol";
-    static final String user = "postgres";
+    static final String user = "root";
     static final String password = "root";
+
+    //COMPROBACIONES
+    static private final String SQL_COMPROBAR_EQUIPO_EXISTE = "SELECT * FROM objetos.equipos WHERE equipo_id = ?;";
 
     //SENTENCIAS SQL
     static private final String SQL_INSERTAR_EQUIPO = "INSERT INTO objetos.equipos (equipo_info) VALUES (ROW(?,?,ROW(?,?)));";
@@ -37,8 +40,7 @@ public class Menu {
     static private final String SQL_PARTIDOS_EQUIPO_VISITANTE_ID = "SELECT partido_id,fecha, equipo_local,equipo_visitante FROM objetos.partidos WHERE equipo_visitante = ?";
     static private final String SQL_MOSTRAR_INFO_SEGUN_POSICION = "SELECT jugador_id,(datos_personales).nombre as Nombre,(datos_personales).edad as Edad,(jugador_info).dorsal as Dorsal, (jugador_info).posicion as Posicion,(jugador_info).altura as Altura, equipo_id as Equipo FROM objetos.jugadores WHERE (jugador_info).posicion= ?";
     static private final String SQL_MOSTRAR_INFO_SEGUN_DORSAL = "SELECT jugador_id,(datos_personales).nombre as Nombre,(datos_personales).edad as Edad,(jugador_info).dorsal as Dorsal, (jugador_info).posicion as Posicion,(jugador_info).altura as Altura, equipo_id as Equipo FROM objetos.jugadores WHERE (jugador_info).dorsal= ?";;
-    static private final String SQL_MOSTRAR_PARTIDOS_SEGUN_FECHA = "SELECT partido_id,fecha, equipo_local,equipo_visitante FROM objetos.partidos ORDER BY fecha ASC";
-
+    static private final String SQL_MOSTRAR_PARTIDOS_SEGUN_FECHA = "SELECT partido_id,fecha, equipo_local,equipo_visitante FROM objetos.partidos WHERE fecha = ?";
 
 
     public static void dialog(){
@@ -136,7 +138,23 @@ public class Menu {
         }catch (InputMismatchException e){
             System.out.println("ERROR!!!!! El dato introducido no es correcto");
         }
+    }
 
+    private static boolean comprobarEquipoExiste(Connection conn) {
+        try {
+            int idEquipo = pedirInt("Introduce la id del equipo al que lo quieres inscribir");
+            PreparedStatement ps = conn.prepareStatement(SQL_COMPROBAR_EQUIPO_EXISTE);
+            ps.setInt(1,idEquipo);
+            int rs = ps.executeUpdate();
+            return rs > 0;
+
+        } catch (SQLException e) {
+            System.out.println("Fallo en en SQL");
+            return false;
+        }catch (InputMismatchException e){
+            System.out.println("ERROR!!!!! El dato introducido no es correcto");
+            return false;
+        }
     }
 
     private static void inscribirJugadorEquipo(Connection conn) {
@@ -207,7 +225,16 @@ public class Menu {
         try {
             PreparedStatement ps = conn.prepareStatement(SQL_MOSTRAR_PARTIDOS_SEGUN_FECHA);
 
+            String fecha = pedirString("Introduce la fecha en el siguiente formato de ejemplo: [23-10-1997]");
+
+            //Formateador de fechas
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+            LocalDate date = LocalDate.parse(fecha,formatter);
+
+            ps.setDate(1, Date.valueOf(date));
+
             ResultSet rs = ps.executeQuery();
+
             while (rs.next()){
                 System.out.println("****************************************************");
                 System.out.println("ID del partido: " + rs.getString("partido_id"));
@@ -478,7 +505,7 @@ public class Menu {
 
     private static void modificarEquipo(Connection conn) {
         try {
-            int idEquipo = pedirInt("Introduce la id del equipo");
+            int idEquipo = pedirInt("Introduce la id del equipo a modificar");
             String nombre = pedirString("Introduce el nombre del equipo");
             String ciudad = pedirString("Introduce la ciudad del equipo");
             String nombreE = pedirString("Introduce el nombre del entrenador");
@@ -491,7 +518,7 @@ public class Menu {
             ps.setInt(4,edad);
             ps.setInt(5,idEquipo);
 
-            int insert = ps.executeUpdate();
+            int modificar = ps.executeUpdate();
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -554,7 +581,7 @@ public class Menu {
             int edad = pedirInt("Introduce la edad del jugador");
             int dorsal = pedirInt("Introduce el dorsal del jugador");
             String posicion = pedirString("Introduce la posicion del jugador");
-            BigDecimal altura = pedirDecimal("Introduce la altura del jugador en el formato ---> [1.83]");
+            BigDecimal altura = pedirDecimal("Introduce la altura del jugador en el formato ---> [1,83]");
             int idEqui = pedirInt("Introduce la id del equipo");
 
             PreparedStatement ps = conn.prepareStatement(SQL_INSERTAR_JUGADOR);
@@ -568,7 +595,7 @@ public class Menu {
             int insert = ps.executeUpdate();
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            System.out.println("La id del equipo no existe");
         }catch (InputMismatchException e){
             System.out.println("ERROR!!!!! El dato introducido no es correcto");
         }
