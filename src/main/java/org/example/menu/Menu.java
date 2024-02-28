@@ -1,11 +1,14 @@
 package org.example.menu;
 
+import org.postgresql.util.PSQLException;
+
 import java.math.BigDecimal;
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Formatter;
 import java.util.InputMismatchException;
 import java.util.Scanner;
@@ -409,7 +412,7 @@ public class Menu {
                 System.out.println("****************************************************");
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            System.out.println("El jugador no existe");
         }catch (InputMismatchException e){
             System.out.println("ERROR!!!!! El dato introducido no es correcto");
         }
@@ -418,7 +421,7 @@ public class Menu {
     private static void modificarPartido(Connection conn) {
         try {
             int idP = pedirInt("Introduce la id del partido a modificar");
-            String fecha = pedirString("Introduce la fecha del partido");
+            String fecha = pedirString("Introduce la fecha del partido en el siguiente formato de ejemplo: [23-10-1997]");
             int idL = pedirInt("Introduce la id del equipo local");
             int idV = pedirInt("Introduce la id del equipo visitante");
 
@@ -435,9 +438,11 @@ public class Menu {
             int insert = ps.executeUpdate();
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            System.out.println("La id del algun equipo no existe");
         }catch (InputMismatchException e){
             System.out.println("Dato introducido es incorrecto");
+        }catch (DateTimeParseException de){
+            System.out.println("ERROR!!!!! La fecha debe ser introducida con este formato: [23-10-1997]");
         }
 
     }
@@ -497,7 +502,7 @@ public class Menu {
 
     private static void insertarPartido(Connection conn) {
         try {
-            String fecha = pedirString("Introduce la fecha del partido");
+            String fecha = pedirString("Introduce la fecha del partido en el siguiente formato de ejemplo: [23-10-1997]");
             int idL = pedirInt("Introduce la id del equipo local");
             int idV = pedirInt("Introduce la id del equipo visitante");
 
@@ -513,11 +518,12 @@ public class Menu {
             int insert = ps.executeUpdate();
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            System.out.println("La id del algun equipo no existe");
         }catch (InputMismatchException e){
             System.out.println("Dato introducido es incorrecto");
+        }catch (DateTimeParseException de){
+            System.out.println("ERROR!!!!! La fecha debe ser introducida con este formato: [23-10-1997]");
         }
-
     }
 
     private static void insertarEquipo(Connection conn) {
@@ -535,7 +541,7 @@ public class Menu {
             int insert = ps.executeUpdate();
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            System.out.println("La id del algun equipo no existe");
         }catch (InputMismatchException e){
             System.out.println("ERROR!!!!! El dato introducido no es correcto");
         }
@@ -548,7 +554,7 @@ public class Menu {
             int edad = pedirInt("Introduce la edad del jugador");
             int dorsal = pedirInt("Introduce el dorsal del jugador");
             String posicion = pedirString("Introduce la posicion del jugador");
-            BigDecimal altura = pedirDecimal("Introduce la altura del jugador");
+            BigDecimal altura = pedirDecimal("Introduce la altura del jugador en el formato ---> [1.83]");
             int idEqui = pedirInt("Introduce la id del equipo");
 
             PreparedStatement ps = conn.prepareStatement(SQL_INSERTAR_JUGADOR);
@@ -564,7 +570,7 @@ public class Menu {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }catch (InputMismatchException e){
-            System.out.println("No es una opción valida");
+            System.out.println("ERROR!!!!! El dato introducido no es correcto");
         }
 
 
